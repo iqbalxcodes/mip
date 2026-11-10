@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mövenpick Important Person Brief Generator by Iqbal</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Dancing+Script:wght@500&family=Great+Vibes&family=Homemade+Apple&family=Pacifico&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:#fff;color:#000}
+header{display:flex;justify-content:center;align-items:center;position:relative;padding:18px;border-bottom:2px solid #000;font-weight:700;font-size:20px}
+#gear{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:28px;cursor:pointer;background:none;border:0}
+#drop{display:block;margin:28px auto;width:min(420px,90%);padding:36px 20px;border-radius:32px;background:#63a5e3;color:#fff;text-align:center;font-weight:700;font-size:20px;cursor:pointer}
+#drop svg{width:56px;height:56px;fill:none;stroke:#fff;stroke-width:2;display:block;margin:0 auto 10px}
+#del{color:#e00;text-decoration:underline;font-weight:800;display:none;margin-top:6px}
+body.has #del{display:block}.has #hint{display:none}.has #okmsg{display:block}#okmsg{display:none}
+body.drag #drop{outline:4px dashed #1a5fa8}
+.card{background:#63a5e3;color:#fff;padding:8px;border-top:2px solid #fff}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.row h2{margin:0;font-size:20px;min-width:170px}
+input,select,textarea,button.gen{font:inherit;font-size:13px;border:2px solid #000;border-radius:4px;padding:4px 8px;background:#fff;color:#000}
+select:disabled{opacity:1;background:#eee}
+.row input.author{flex:1;min-width:140px}
+button.gen{background:#7ff0f0;font-size:12px;cursor:pointer;margin-left:auto}
+textarea{width:100%;height:80px;border-radius:6px;font-size:16px;resize:vertical}
+#bottom{display:flex;border-top:2px solid #fff;min-height:300px}
+.sig{flex:1;background:#63a5e3;color:#fff;padding:8px;border-right:2px solid #fff;display:flex;flex-direction:column;gap:6px}
+.sig h2{margin:0;font-size:20px;display:flex;justify-content:space-between}
+.sig h2 button{background:none;border:0;color:#fff;font-size:24px;cursor:pointer}
+.sig canvas{background:#fff;border:2px solid #000;border-radius:6px;width:100%;flex:1;min-height:160px;touch-action:none;cursor:crosshair}
+.sig .f{display:flex;gap:10px}.sig .f>*{flex:1;min-width:0}
+#exec{width:200px;background:#63a5e3;color:#fff;border:0;font-weight:800;font-size:20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+#exec svg{width:80px;height:80px;fill:none;stroke:#fff;stroke-width:3;stroke-linejoin:round}
+#exec:disabled{opacity:.6;cursor:wait}
+@media(max-width:700px){#bottom{flex-direction:column}#exec{width:100%;padding:20px}}
+
+/* ---- letters (offscreen, A4 @96dpi = 794x1123) ---- */
+#stage{position:fixed;left:-10000px;top:0}
+.page{width:794px;height:1123px;background:#fff;padding:226px 94px 60px;font-family:Arial,Helvetica,sans-serif;color:#333;overflow:hidden}
+.page .ttl{text-align:center;font-size:16px;color:#000;margin-bottom:34px;white-space:nowrap}
+.page .ttl b{font-family:Broadway,'Arial Black',Arial,sans-serif;font-weight:400;font-size:107px;line-height:0;vertical-align:-4px}
+.page .ttl b+span{margin-left:1px}
+.page h3{font-size:18.7px;margin:0 0 30px;line-height:1.35}
+.page p{font-size:16px;margin:0 0 12px;line-height:1.35}
+.page .wis{text-align:center;font-size:18.7px;margin:30px 0 14px}
+.qbox{min-height:130px;text-align:center;display:flex;flex-direction:column;justify-content:center}
+.qbox .q{font-size:23px;line-height:1.35}
+.qbox .a{text-align:right;font-size:14px;margin-top:6px;font-family:Calibri,Arial,sans-serif}
+.close{margin-top:24px;font-size:16px}
+.sigs{display:flex;gap:30px;margin-top:6px}
+.sigs>div{flex:1;font-size:16px}
+.sigs .im{height:84px;display:flex;align-items:flex-end}
+.sigs img{max-height:80px;max-width:100%}
+.sigs b{display:block}
+</style>
+</head>
+<body>
+<header>Mövenpick Important Person Brief Generator by Iqbal<button id="gear" title="Settings">⚙</button></header>
+
+<label id="drop" for="file">
+  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 18v-6M9 14l3-3 3 3"/></svg>
+  <span id="hint">XML<br>Upload File or Drop Here</span>
+  <span id="okmsg">XML File Uploaded!<br><small id="fname"></small></span>
+  <span id="del">Delete?</span>
+</label>
+<input type="file" id="file" accept=".xml,.XML,text/xml,application/xml" hidden>
+
+<section class="card" id="qde"></section>
+<section class="card" id="qen"></section>
+
+<div id="bottom">
+  <div class="sig" id="s0"></div>
+  <div class="sig" id="s1"></div>
+  <button id="exec"><svg viewBox="0 0 24 24"><path d="M6 3l15 9-15 9z"/></svg>Execute</button>
+</div>
+<div id="stage"></div>
+
+<script>
+const FONTS={
+ 'Baguet Script':"'Baguet Script','Dancing Script',cursive",
+ 'Bradley Hand':"'Bradley Hand','Bradley Hand ITC','Caveat',cursive",
+ 'Dancing Script':"'Dancing Script',cursive",'Great Vibes':"'Great Vibes',cursive",
+ 'Caveat':"'Caveat',cursive",'Homemade Apple':"'Homemade Apple',cursive",
+ 'Pacifico':"'Pacifico',cursive",'Arial (Standard)':"Arial,sans-serif"};
+const JOBS={ // value -> [de,en]
+ director:['Hoteldirektor','Hotel Director'],fom:['Front Office Manager','Front Office Manager'],
+ manager:['Manager','Manager'],team:['Ihr Mövenpick Team','Your Mövenpick Team']};
+const T={
+ de:{title:['Sie sind ','M','övenpick ','I','mportant ','P','erson'],
+  p:['Für einen reibungslosen Aufenthalt steht Ihnen unser Rezeptionsteam gerne 24/7 unter der Rufnummer <b>500</b> zur Verfügung.',
+     'In unserem Restaurant präsentieren wir täglich von 6.00 Uhr bis 10.00 Uhr ein reichhaltiges Frühstücks Buffet. Unser Team aus Küche und Service steht von 18.00 Uhr bis 22.00 Uhr mit einer frischen und saisonalen Auswahl aus unserer Speise- oder Getränkekarte für Sie bereit. Und unser Barkeeper erwartet Sie ab 17.00 zu erfrischenden Feierabend Drinks.'],
+  wis:'Unsere Weisheit der Woche:',pre:'// ',
+  end:'In diesem Sinne wünschen wir Ihnen im Namen des gesamten Mövenpick-Teams einen unvergesslichen Aufenthalt.',
+  bye:'Gastfreundliche Grüße'},
+ en:{title:['You are ','M','övenpick ','I','mportant ','P','erson'],
+  p:['To provide a perfect stay for you the reception team is available 24/7 under the phone number <b>500</b>.',
+     'In our restaurant we present a rich breakfast buffet every day from 6am to 10am.<br>Our kitchen and service team is ready for you from 6pm to 10pm with a fresh and seasonal selection from our food or drink menu.<br>And our bartender awaits you from 5 pm for refreshing after-work drinks.'],
+  wis:'A friendly advice:',pre:'',
+  end:'On behalf of the entire Mövenpick Team we wish you a pleasant and memorable stay in Munich.',
+  bye:'Kind regards,'}};
+
+const $=s=>document.querySelector(s), esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dev=()=>alert('Feature under development');
+let xmlText=null;
+
+/* ---- build UI cards ---- */
+const fontOpts=d=>Object.keys(FONTS).map(f=>`<option ${f==d?'selected':''} style="font-family:${FONTS[f]}">${f}</option>`).join('');
+function quoteCard(el,id,lang,defFont,ph){
+  el.innerHTML=`<div class="row"><h2>Quotes of the Week</h2>
+   <select disabled><option>${lang}</option></select>
+   <select id="${id}f">${fontOpts(defFont)}</select>
+   <input class="author" id="${id}a" placeholder="type author here ...">
+   <button class="gen" onclick="dev()">Generate Random</button></div>
+   <textarea id="${id}q" placeholder="type your quote here ..."></textarea>`;
+  const f=$('#'+id+'f'),t=$('#'+id+'q');
+  f.onchange=()=>t.style.fontFamily=FONTS[f.value]; t.style.fontFamily=FONTS[f.value];
+}
+quoteCard($('#qde'),'de','Deutsch','Baguet Script');
+quoteCard($('#qen'),'en','English','Bradley Hand');
+
+const pads=[];
+[0,1].forEach(i=>{
+  $('#s'+i).innerHTML=`<h2>Signature<button title="Clear">↻</button></h2><canvas></canvas>
+   <div class="f"><select id="j${i}"><option value="">Job Title</option>
+   ${Object.entries(JOBS).map(([k,v])=>`<option value="${k}">${v[1]}</option>`).join('')}</select>
+   <input id="n${i}" placeholder="Name"></div>`;
+  const c=$('#s'+i+' canvas'),ctx=c.getContext('2d');let strokes=[],cur=null;
+  const size=()=>{const r=c.getBoundingClientRect();c.width=r.width*2;c.height=r.height*2;strokes=[];cur=null;draw()};
+  const pos=e=>{const r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*2,y:(e.clientY-r.top)*2,t:e.timeStamp}};
+  // pen look: width from speed (slow=thick), smoothed, ends taper to a point
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);ctx.strokeStyle='#0a1f6b';ctx.lineCap='round';ctx.lineJoin='round';
+    for(const p of strokes){
+      const n=p.length;let w=14;
+      const ws=p.map((q,k)=>{
+        if(k){const d=Math.hypot(q.x-p[k-1].x,q.y-p[k-1].y),v=d/Math.max(1,q.t-p[k-1].t);
+          w=w*.85+Math.max(5,Math.min(15,16-v*5))*.15}
+        const taper=Math.min(1,(k+1)/10,(n-k)/14);
+        return Math.max(1,w*(.15+.85*taper))});
+      if(n==1){ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);ctx.lineTo(p[0].x+.1,p[0].y);ctx.stroke()}
+      for(let k=1;k<n;k++){
+        const m0=k>1?{x:(p[k-2].x+p[k-1].x)/2,y:(p[k-2].y+p[k-1].y)/2}:p[0],
+              m1={x:(p[k-1].x+p[k].x)/2,y:(p[k-1].y+p[k].y)/2};
+        ctx.lineWidth=ws[k];ctx.beginPath();ctx.moveTo(m0.x,m0.y);ctx.quadraticCurveTo(p[k-1].x,p[k-1].y,m1.x,m1.y);ctx.stroke();
+        if(k==n-1){ctx.lineWidth=ws[k];ctx.beginPath();ctx.moveTo(m1.x,m1.y);ctx.lineTo(p[k].x,p[k].y);ctx.stroke()}
+      }
+    }
+  }
+  c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);cur=[pos(e)];strokes.push(cur);draw()};
+  c.onpointermove=e=>{if(!cur)return;cur.push(pos(e));draw()};
+  c.onpointerup=c.onpointercancel=()=>cur=null;
+  $('#s'+i+' h2 button').onclick=size;
+  requestAnimationFrame(size);
+  pads[i]={img:()=>strokes.length?c.toDataURL('image/png'):null};
+});
+
+/* ---- XML upload ---- */
+function load(f){
+  if(!f)return;
+  if(!/\.xml$/i.test(f.name)){alert('Bitte nur XML-Datei / XML files only.');return}
+  const r=new FileReader();
+  r.onload=()=>{xmlText=r.result;document.body.classList.add('has');$('#fname').textContent=f.name};
+  r.readAsText(f);
+}
+$('#file').onchange=e=>{load(e.target.files[0]);e.target.value=''};
+$('#del').onclick=e=>{e.preventDefault();e.stopPropagation();xmlText=null;document.body.classList.remove('has')};
+$('#gear').onclick=dev;
+addEventListener('dragover',e=>{e.preventDefault();document.body.classList.add('drag')});
+addEventListener('dragleave',e=>{if(!e.relatedTarget)document.body.classList.remove('drag')});
+addEventListener('drop',e=>{e.preventDefault();document.body.classList.remove('drag');load(e.dataTransfer.files[0])});
+
+/* ---- XML -> guests ---- */
+const cap=s=>s===s.toUpperCase()?s.charAt(0)+s.slice(1).toLowerCase():s;
+function parse(xml){
+  const doc=new DOMParser().parseFromString(xml,'text/xml');
+  if(doc.querySelector('parsererror'))throw Error('XML invalid');
+  const out=[];
+  doc.querySelectorAll('G_RESERVATION').forEach(g=>{
+    const mem=[...g.querySelectorAll('MEMBERSHIP_TYPE')].map(m=>m.textContent.trim());
+    if(mem.includes('A1'))return; // skip A1
+    const [last='',first='',sal='']=(g.querySelector('FULL_NAME')?.textContent||'').split(',').map(s=>s.trim());
+    const s=sal.replace(/\./g,'').toLowerCase();
+    let lang='en',greet;
+    const L=cap(last);
+    if(['herr','herrn'].includes(s)){lang='de';greet=`sehr geehrter Herr ${L}`}
+    else if(s==='frau'){lang='de';greet=`sehr geehrte Frau ${L}`}
+    else if(s==='familie'){lang='de';greet=`sehr geehrte Familie ${L}`}
+    else if(['mr','mrs','ms','miss'].includes(s)){greet=`dear ${sal.replace(/\.?$/,'.')} ${L}`}
+    else if(s==='family'){greet=`dear Family ${L}`}
+    else greet=`dear ${first?cap(first)+' ':''}${L}`; // unknown salutation -> English, full name
+    out.push({lang,greet});
+  });
+  return out;
+}
+
+/* ---- letter HTML ---- */
+function letter(g,ctx){
+  const t=T[g.lang],q=ctx.q[g.lang],S=ctx.s;
+  const title=t.title.map((x,i)=>i%2?`<b>${x}</b>`:x).join('');
+  const head=g.lang==='de'
+    ?`Deshalb freuen wir uns, ${g.greet},<br>Sie als Gast bei uns begrüßen zu dürfen.`
+    :`That’s why we are pleased, ${g.greet},<br>to welcome you as our guests.`;
+  const qt=q.text?(g.lang==='en'?`„${esc(q.text).replace(/\n/g,'<br>')}“`:esc(q.text).replace(/\n/g,'<br>')):'';
+  const sig=s=>`<div><div class="im">${s.img?`<img src="${s.img}">`:''}</div>
+     <div style="margin-top:6px">${esc(s.name)||'&nbsp;'}</div><b>${s.job?JOBS[s.job][g.lang==='de'?0:1]:'&nbsp;'}</b></div>`;
+  return `<div class="page">
+   <div class="ttl">${title}</div><h3>${head}</h3>
+   ${t.p.map(x=>`<p>${x}</p>`).join('')}
+   <div class="wis">${t.wis}</div>
+   <div class="qbox"><div class="q" style="font-family:${FONTS[q.font]}">${qt}</div>
+     ${q.author?`<div class="a">${t.pre}${esc(q.author)}</div>`:''}</div>
+   <div class="close"><p>${t.end}</p><p>${t.bye}</p></div>
+   <div class="sigs">${sig(S[0])}${sig(S[1])}</div></div>`;
+}
+
+/* ---- execute ---- */
+$('#exec').onclick=async()=>{
+  if(!xmlText)return alert('Bitte zuerst XML hochladen / Upload XML first.');
+  const btn=$('#exec');btn.disabled=true;
+  try{
+    const guests=parse(xmlText);
+    if(!guests.length)throw Error('Keine Gäste gefunden (alle A1?) / No guests to generate.');
+    const ctx={q:{},s:[0,1].map(i=>({img:pads[i].img(),name:$('#n'+i).value.trim(),job:$('#j'+i).value}))};
+    for(const l of['de','en'])ctx.q[l]={text:$('#'+l+'q').value.trim(),font:$('#'+l+'f').value,author:$('#'+l+'a').value.trim()};
+    $('#stage').innerHTML=guests.map(g=>letter(g,ctx)).join('');
+    await Promise.all(Object.values(FONTS).map(f=>document.fonts.load(`24px ${f}`).catch(()=>{})));
+    await document.fonts.ready;
+    const pdf=new jspdf.jsPDF({unit:'mm',format:'a4'});
+    const pages=[...document.querySelectorAll('#stage .page')];
+    for(let i=0;i<pages.length;i++){
+      const c=await html2canvas(pages[i],{scale:2,backgroundColor:'#fff'});
+      if(i)pdf.addPage();
+      pdf.addImage(c.toDataURL('image/jpeg',.92),'JPEG',0,0,210,297);
+    }
+    pdf.save(`Moevenpick_Briefe_${new Date().toISOString().slice(0,10)}.pdf`);
+    alert(`Brief Generated! (${pages.length} Seiten / pages)`);
+  }catch(e){alert('Error: '+e.message)}
+  finally{$('#stage').innerHTML='';btn.disabled=false}
+};
+</script>
+</body>
+</html>
