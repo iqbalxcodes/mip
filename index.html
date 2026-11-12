@@ -85,7 +85,7 @@ const FONTS={
  'Caveat':"'Caveat',cursive",'Homemade Apple':"'Homemade Apple',cursive",
  'Pacifico':"'Pacifico',cursive",'Arial (Standard)':"Arial,sans-serif"};
 const JOBS={ // value -> [de,en]
- director:['Hoteldirektor','Hotel Director'],fom:['Front Office Manager','Front Office Manager'],
+ director:['General Manager','General Manager'],fom:['Front Office Manager','Front Office Manager'],
  manager:['Manager','Manager'],team:['Ihr Mövenpick Team','Your Mövenpick Team']};
 const T={
  de:{title:['Sie sind ','M','övenpick ','I','mportant ','P','erson'],
@@ -179,7 +179,7 @@ function parse(xml){
   const out=[];
   doc.querySelectorAll('G_RESERVATION').forEach(g=>{
     const mem=[...g.querySelectorAll('MEMBERSHIP_TYPE')].map(m=>m.textContent.trim());
-    if(mem.includes('A1'))return; // skip A1
+    if(mem.some(m=>m==='A1'||m==='A2'))return; // skip A1 & A2
     const [last='',first='',sal='']=(g.querySelector('FULL_NAME')?.textContent||'').split(',').map(s=>s.trim());
     const s=sal.replace(/\./g,'').toLowerCase();
     let lang='en',greet;
@@ -221,7 +221,7 @@ $('#exec').onclick=async()=>{
   const btn=$('#exec');btn.disabled=true;
   try{
     const guests=parse(xmlText);
-    if(!guests.length)throw Error('Keine Gäste gefunden (alle A1?) / No guests to generate.');
+    if(!guests.length)throw Error('Keine Gäste gefunden (alle A1/A2?) / No guests to generate.');
     const ctx={q:{},s:[0,1].map(i=>({img:pads[i].img(),name:$('#n'+i).value.trim(),job:$('#j'+i).value}))};
     for(const l of['de','en'])ctx.q[l]={text:$('#'+l+'q').value.trim(),font:$('#'+l+'f').value,author:$('#'+l+'a').value.trim()};
     $('#stage').innerHTML=guests.map(g=>letter(g,ctx)).join('');
